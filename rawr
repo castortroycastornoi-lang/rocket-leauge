@@ -1,0 +1,21 @@
+import UIKit
+import SpriteKit
+
+class GameViewController: UIViewController {
+    var scene: GameScene!
+    var leftJoystick: JoystickView!
+    var boostButton: UIButton!
+    var joystickVector: CGPoint = .zero
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let skView = SKView(frame: view.bounds)
+        skView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(skView)
+
+        scene = GameScene(size: skView.bounds.size)
+        scene.scaleMode = .resizeFill
+        skView.presentScene(scene)
+
+       
