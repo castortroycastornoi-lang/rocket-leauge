@@ -1,0 +1,82 @@
+using UnityEngine;
+
+public class RocketCar : MonoBehaviour
+{
+    [Header("Kjøreegenskaper")]
+    public float speed = 20f;
+    public float turnSpeed = 120f;
+    public float boostMultiplier = 2f;
+    
+    [Header("Hopp-innstillinger")]
+    public float jumpForce = 8f;
+    public LayerMask groundLayer; // Sett denne til "Ground" i Inspektøren
+    
+    private Rigidbody rb;
+    private int jumpCount = 0;
+    private bool isGrounded;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        // Gjør at bilen ikke velter så lett ved å senke massesenteret
+        rb.centerOfMass = new Vector3(0, -0.5f, 0);
+    }
+
+    void Update()
+    {
+        HandleInput();
+        CheckGround();
+    }
+
+    void HandleInput()
+    {
+        // 1. KJØRING OG BOOST
+        float moveInput = Input.GetAxis("Vertical");
+        float turnInput = Input.GetAxis("Horizontal");
+        float currentSpeed = speed;
+
+        // Sjekk om Boost (venstre Shift eller egen knapp) er trykket
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            currentSpeed *= boostMultiplier;
+        }
+
+        // Bevegelse
+        Vector3 move = transform.forward * moveInput * currentSpeed * Time.deltaTime;
+        rb.MovePosition(rb.position + move);
+
+        // Svinging (kun hvis bilen beveger seg)
+        if (moveInput != 0)
+        {
+            float turn = turnInput * turnSpeed * Time.deltaTime;
+            Quaternion turnRotation = Quaternion.Euler(0f, turn, 0f);
+            rb.MoveRotation(rb.rotation * turnRotation);
+        }
+
+        // 2. HOPP OG DOBBELTHOPP
+        if (Input.GetButtonDown("Jump") && jumpCount < 2)
+        {
+            Jump();
+        }
+    }
+
+    void Jump()
+    {
+        // Nullstill vertikal fart for et rent hopp
+        rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+        
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        jumpCount++;
+    }
+
+    void CheckGround()
+    {
+        // Bruker en liten stråle (Raycast) nedover for å sjekke bakken
+        isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.1f, groundLayer);
+        
+        if (isGrounded && rb.velocity.y <= 0)
+        {
+            jumpCount = 0;
+        }
+    }
+}
