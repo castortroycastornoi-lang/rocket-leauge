@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enkelt 2D Parkour Spill</title>
+    <style>
+        /* CSS - Utseende og Animasjoner */
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            flex-direction: column;
+            color: white;
+        }
+
+        /* Selve spillboksen */
+        #game-container {
+            width: 800px;
+            height: 300px;
+            border: 2px solid #fff;
+            background-color: #f0f0f0;
+            position: relative; /* Viktig for posisjonering av innhold */
+            overflow: hidden; /* Skjuler ting som går utenfor boksen */
+        }
+
+        /* Spilleren (Karakteren) */
+        #player {
+            width: 50px;
+            height: 50px;
+            background-color: #ff5722; /* Oransje farge */
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+        }
+
+        /* Klassen som legges til når man hopper */
+        .animate-jump {
+            animation: jump 500ms linear;
+        }
+
+        /* Animasjon for hopp */
+        @keyframes jump {
+            0% { bottom: 0; }
+            30% { bottom: 120px; } /* Toppen av hoppet */
+            70% { bottom: 120px; } /* Henger litt i luften */
+            100% { bottom: 0; }
+        }
+
+        /* Hindringen */
+        #obstacle {
+            width: 30px;
+            height: 60px;
+            background-color: #212121;
+            position: absolute;
+            bottom: 0;
+            left: 800px; /* Starter utenfor høyre kant */
+            animation: moveObstacle 2s infinite linear;
+        }
+
+        /* Animasjon for hindringen som beveger seg mot venstre */
+        @keyframes moveObstacle {
+            0% { left: 800px; }
+            100% { left: -40px; }
+        }
+
+        /* Poengtavle */
+        #score-board {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+        
+        p { margin-top: 10px; font-size: 14px; color: #ccc; }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="player"></div>
+        <div id="obstacle"></div>
+    </div>
+
+    <div id="score-board">Poeng: <span id="scoreSpan">0</span></div>
+    <p>Trykk på <strong>MELLOMROM (Space)</strong> eller klikk på skjermen for å hoppe.</p>
+
+    <script>
+        /* JavaScript - Logikk */
+
+        var player = document.getElementById("player");
+        var obstacle = document.getElementById("obstacle");
+        var scoreSpan = document.getElementById("scoreSpan");
+        var counter = 0;
+        
+        // Funksjon for å hoppe
+        function jump() {
+            // Sjekk om klassen allerede er der (for å unngå spam-klikk)
+            if (player.classList.contains("animate-jump")) {
+                return;
+            }
+            
+            player.classList.add("animate-jump");
+
+            // Fjern klassen etter at animasjonen er ferdig (500ms)
+            setTimeout(function() {
+                player.classList.remove("animate-jump");
+            }, 500);
+        }
+
+        // Kollisjonssjekk - kjøres hvert 10. millisekund
+        var checkDead = setInterval(function() {
+            
+            // Hent nåværende posisjon til spilleren (hvor høyt oppe er den?)
+            // Vi bruker 'top' verdien. Siden vi brukte 'bottom' i CSS, må vi regne litt.
+            // Enklere: Vi henter "top" posisjonen fra toppen av spillcontaineren.
+            var playerTop = parseInt(window.getComputedStyle(player).getPropertyValue("top"));
+
+            // Hent nåværende posisjon til hindringen (hvor langt til venstre?)
+            var obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("left"));
+
+            // Logikk:
+            // 1. Hvis hindringen er mellom 0 og 50px fra venstre (der spilleren er)...
+            // 2. OG spilleren ikke er høyt nok oppe (playerTop > 250 betyr at den er nær bakken)...
+            // ... da har vi krasjet.
+            
+            // Merk: Spillhøyde er 300px. Spiller er 50px høy. Bakken er ved top: 250px.
+            // Hvis playerTop er f.eks 260, står han på bakken. Hvis 150, er han i lufta.
+            
+            if (obstacleLeft < 100 && obstacleLeft > 0 && playerTop >= 250) {
+                obstacle.style.animation = "none";
+                obstacle.style.display = "none";
+                alert("Game Over! Du fikk " + Math.floor(counter / 100) + " poeng.");
+                counter = 0;
+                // Start spillet på nytt ved å laste siden på nytt
+                location.reload(); 
+            } else {
+                // Øk poengsummen hvis vi lever
+                counter++;
+                scoreSpan.innerText = Math.floor(counter / 100);
+            }
+
+        }, 10);
+
+        // Lytt etter tastetrykk (Space)
+        document.body.onkeydown = function(e) {
+            if (e.code === "Space") {
+                jump();
+            }
+        }
+
+        // Lytt etter museklikk / touch (for mobil)
+        document.body.onclick = function() {
+            jump();
+        }
+
+    </script>
+</body>
+</html>
